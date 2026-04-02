@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Number Guessing Game</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --accent: #00c896;
+      --accent2: #0a8fff;
+      --danger: #e24b4a;
+      --warn: #ef9f27;
+      --win-color: #3B6D11;
+      --win-bg: #EAF3DE;
+      --win-border: #C0DD97;
+      --loss-color: #A32D2D;
+      --loss-bg: #FCEBEB;
+      --loss-border: #F7C1C1;
+      --color-bg: #ffffff;
+      --color-bg-secondary: #f4f4f2;
+      --color-bg-tertiary: #eeede9;
+      --color-text: #1a1a1a;
+      --color-text-secondary: #666660;
+      --color-border: rgba(0,0,0,0.12);
+      --color-border-secondary: rgba(0,0,0,0.22);
+      --radius-md: 8px;
+      --radius-lg: 12px;
+      --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --color-bg: #1c1c1e;
+        --color-bg-secondary: #2c2c2e;
+        --color-bg-tertiary: #3a3a3c;
+        --color-text: #f2f2f7;
+        --color-text-secondary: #8e8e93;
+        --color-border: rgba(255,255,255,0.10);
+        --color-border-secondary: rgba(255,255,255,0.20);
+        --win-bg: #1a2e12;
+        --win-color: #7fcf5a;
+        --win-border: #3B6D11;
+        --loss-bg: #2e1212;
+        --loss-color: #ff7b7b;
+        --loss-border: #A32D2D;
+      }
+    }
+
+    body {
+      font-family: var(--font);
+      background: var(--color-bg-tertiary);
+      color: var(--color-text);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 2rem 1rem 3rem;
+    }
+
+    .wrapper {
+      width: 100%;
+      max-width: 780px;
+    }
+
+    /* ── Typography ── */
+    h1 { font-size: 22px; font-weight: 500; color: var(--color-text); letter-spacing: -0.4px; }
+    .subtitle { font-size: 13px; color: var(--color-text-secondary); margin-top: 3px; }
+    .section-label {
+      font-size: 11px; font-weight: 500; color: var(--color-text-secondary);
+      text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px;
+    }
+
+    /* ── Layout ── */
+    .section { margin-bottom: 1.25rem; }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+    .grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--color-bg);
+      border: 0.5px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: 1rem 1.25rem;
+    }
+
+    /* ── Metric cards ── */
+    .metric {
+      background: var(--color-bg-secondary);
+      border-radius: var(--radius-md);
+      padding: 0.9rem 1rem;
+    }
+    .metric-label { font-size: 12px; color: var(--color-text-secondary); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.04em; }
+    .metric-value { font-size: 22px; font-weight: 500; color: var(--color-text); line-height: 1; }
+    .metric-value.accent { color: var(--accent); }
+    .metric-value.warn   { color: var(--warn); }
+    .metric-value.danger { color: var(--danger); }
+
+    /* ── Difficulty buttons ── */
+    .diff-btn {
+      background: var(--color-bg);
+      border: 0.5px solid var(--color-border-secondary);
+      border-radius: var(--radius-md);
+      padding: 0.8rem 1rem;
+      cursor: pointer;
+      text-align: left;
+      transition: background 0.15s, border-color 0.15s;
+      width: 100%;
+    }
+    .diff-btn:hover { background: var(--color-bg-secondary); }
+    .diff-btn.active { border: 1.5px solid var(--accent); }
+    .diff-title { font-size: 14px; font-weight: 500; color: var(--color-text); }
+    .diff-meta  { font-size: 12px; color: var(--color-text-secondary); margin-top: 3px; }
+
+    /* ── Pills ── */
+    .pill { display: inline-block; font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 99px; margin-top: 6px; }
+    .pill.easy   { background: #EAF3DE; color: #3B6D11; }
+    .pill.medium { background: #FAEEDA; color: #854F0B; }
+    .pill.hard   { background: #FCEBEB; color: #A32D2D; }
+
+    /* ── Buttons ── */
+    .primary-btn {
+      width: 100%; padding: 0.85rem; font-size: 15px; font-weight: 500;
+      background: var(--color-text); color: var(--color-bg);
+      border: none; border-radius: var(--radius-md); cursor: pointer;
+      transition: opacity 0.15s; font-family: var(--font);
+    }
+    .primary-btn:hover  { opacity: 0.85; }
+    .primary-btn:active { opacity: 0.7; }
+    .primary-btn:disabled { opacity: 0.35; cursor: default; }
+
+    .secondary-btn {
+      width: 100%; padding: 0.75rem; font-size: 14px; font-weight: 500;
+      background: transparent; border: 0.5px solid var(--color-border-secondary);
+      border-radius: var(--radius-md); cursor: pointer; color: var(--color-text);
+      transition: background 0.15s; font-family: var(--font);
+    }
+    .secondary-btn:hover { background: var(--color-bg-secondary); }
+
+    .small-btn {
+      padding: 6px 16px; font-size: 13px; font-weight: 500;
+      background: transparent; border: 0.5px solid var(--color-border-secondary);
+      border-radius: var(--radius-md); cursor: pointer; color: var(--color-text);
+      transition: background 0.15s; font-family: var(--font);
+    }
+    .small-btn:hover { background: var(--color-bg-secondary); }
+
+    /* ── Number input ── */
+    .number-input {
+      font-size: 28px; font-weight: 500; text-align: center;
+      padding: 0.7rem; border: 1.5px solid var(--color-border-secondary);
+      border-radius: var(--radius-md); width: 100%;
+      color: var(--color-text); background: var(--color-bg);
+      outline: none; transition: border-color 0.15s; font-family: var(--font);
+    }
+    .number-input:focus { border-color: var(--accent); }
+    .number-input::-webkit-inner-spin-button,
+    .number-input::-webkit-outer-spin-button { -webkit-appearance: none; }
+
+    /* ── Hearts ── */
+    .hearts { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+    .heart { font-size: 15px; transition: transform 0.2s, opacity 0.2s; }
+    .heart.lost { opacity: 0.18; transform: scale(0.82); }
+
+    /* ── Thermometer ── */
+    .thermo-bar { height: 8px; border-radius: 4px; background: var(--color-bg-secondary); overflow: hidden; margin-top: 6px; }
+    .thermo-fill { height: 100%; border-radius: 4px; transition: width 0.5s ease, background 0.5s ease; }
+    .thermo-label { font-size: 13px; font-weight: 500; margin-top: 6px; min-height: 18px; }
+
+    /* ── Guess chips ── */
+    .guess-chips { display: flex; gap: 6px; flex-wrap: wrap; min-height: 28px; }
+    .chip { font-size: 12px; font-weight: 500; padding: 3px 10px; border-radius: 99px; border: 0.5px solid transparent; }
+    .chip.cold { background: #E6F1FB; color: #185FA5; border-color: #B5D4F4; }
+    .chip.warm { background: #FAEEDA; color: #854F0B; border-color: #FAC775; }
+    .chip.hot  { background: #FAECE7; color: #993C1D; border-color: #F5C4B3; }
+    .chip.win  { background: #EAF3DE; color: #3B6D11; border-color: #C0DD97; }
+
+    /* ── Range display ── */
+    #range-display { font-size: 32px; font-weight: 500; text-align: center; margin: 0.5rem 0; letter-spacing: -1px; }
+    #range-sub     { font-size: 12px; text-align: center; color: var(--color-text-secondary); margin-bottom: 0.5rem; }
+
+    /* ── Result box ── */
+    .result-box { border-radius: var(--radius-lg); padding: 1.75rem; text-align: center; border: 0.5px solid; }
+    .result-box.won  { background: var(--win-bg);  border-color: var(--win-border); }
+    .result-box.lost { background: var(--loss-bg); border-color: var(--loss-border); }
+    .result-icon  { font-size: 40px; margin-bottom: 10px; }
+    .result-title { font-size: 22px; font-weight: 500; }
+    .result-sub   { font-size: 14px; color: var(--color-text-secondary); margin-top: 4px; }
+    .result-pts   { font-size: 28px; font-weight: 500; margin-top: 12px; }
+
+    /* ── Round history rows ── */
+    .round-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 7px 0; border-bottom: 0.5px solid var(--color-border); font-size: 13px; gap: 8px; flex-wrap: wrap;
+    }
+    .round-row:last-child { border-bottom: none; }
+    .badge { font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 4px; }
+    .badge.win  { background: var(--win-bg);  color: var(--win-color); }
+    .badge.loss { background: var(--loss-bg); color: var(--loss-color); }
+
+    /* ── Feedback ── */
+    #feedback-msg { font-size: 13px; color: var(--danger); min-height: 18px; margin-top: 6px; }
+
+    /* ── Responsive ── */
+    @media (max-width: 540px) {
+      .grid4 { grid-template-columns: repeat(2, 1fr); }
+      .grid3 { grid-template-columns: 1fr 1fr; }
+      .grid2 { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 360px) {
+      .grid3 { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<div class="wrapper">
+
+  <!-- ════════════════════════ SETUP SCREEN ════════════════════════ -->
+  <div id="setup-screen">
+    <div class="section" style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">
+      <div>
+        <h1>Number Guessing Game</h1>
+        <p class="subtitle">Pick a difficulty and try to guess the secret number</p>
+      </div>
+      <div style="text-align:right">
+        <div class="section-label">Session score</div>
+        <div style="font-size:20px;font-weight:500" id="top-score">0</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-label">Session stats</div>
+      <div class="grid4">
+        <div class="metric"><div class="metric-label">Score</div><div class="metric-value accent" id="stat-score">0</div></div>
+        <div class="metric"><div class="metric-label">Best round</div><div class="metric-value warn" id="stat-best">—</div></div>
+        <div class="metric"><div class="metric-label">Played</div><div class="metric-value" id="stat-played">0</div></div>
+        <div class="metric"><div class="metric-label">Win rate</div><div class="metric-value" id="stat-wr">—</div></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-label">Choose difficulty</div>
+      <div class="grid3">
+        <button class="diff-btn" data-diff="easy" onclick="selectDiff('easy')">
+          <div class="diff-title">Easy</div>
+          <div class="diff-meta">Range 1–50 &nbsp;·&nbsp; 10 tries</div>
+          <span class="pill easy">×1 score</span>
+        </button>
+        <button class="diff-btn active" data-diff="medium" onclick="selectDiff('medium')">
+          <div class="diff-title">Medium</div>
+          <div class="diff-meta">Range 1–100 &nbsp;·&nbsp; 7 tries</div>
+          <span class="pill medium">×2 score</span>
+        </button>
+        <button class="diff-btn" data-diff="hard" onclick="selectDiff('hard')">
+          <div class="diff-title">Hard</div>
+          <div class="diff-meta">Range 1–200 &nbsp;·&nbsp; 5 tries</div>
+          <span class="pill hard">×4 score</span>
+        </button>
+      </div>
+    </div>
+
+    <button class="primary-btn section" onclick="startGame()">Start game</button>
+
+    <div id="history-section" style="display:none">
+      <div class="section-label">Recent rounds</div>
+      <div class="card" id="history-list"></div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════ GAME SCREEN ════════════════════════ -->
+  <div id="game-screen" style="display:none">
+    <div class="section" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+      <div>
+        <h1>Round <span id="round-num">1</span></h1>
+        <p class="subtitle" id="game-sub">Guess the number</p>
+      </div>
+      <button class="small-btn" onclick="quitRound()">Quit round</button>
+    </div>
+
+    <div class="grid2 section">
+      <div class="card">
+        <div class="section-label">The range</div>
+        <div id="range-display">1 – 100</div>
+        <div id="range-sub">Narrow it down</div>
+      </div>
+      <div class="card">
+        <div class="section-label" style="margin-bottom:10px">Attempts remaining</div>
+        <div class="hearts" id="hearts-row"></div>
+        <div style="font-size:12px;color:var(--color-text-secondary);margin-top:8px" id="att-count"></div>
+      </div>
+    </div>
+
+    <div class="card section">
+      <div class="section-label">Proximity</div>
+      <div class="thermo-bar"><div class="thermo-fill" id="thermo-fill" style="width:0%;background:#888"></div></div>
+      <div class="thermo-label" id="thermo-label" style="color:var(--color-text-secondary)">Make your first guess…</div>
+    </div>
+
+    <div class="card section">
+      <div class="section-label" style="margin-bottom:8px">Your guesses</div>
+      <div class="guess-chips" id="guess-chips">
+        <span style="font-size:13px;color:var(--color-text-secondary)">None yet</span>
+      </div>
+    </div>
+
+    <div class="card section">
+      <div class="section-label" style="margin-bottom:10px">Enter your guess</div>
+      <input type="number" class="number-input" id="guess-input" placeholder="?" />
+      <p id="feedback-msg"></p>
+      <button class="primary-btn" id="guess-btn" onclick="makeGuess()" style="margin-top:12px">Guess</button>
+    </div>
+
+    <div class="grid4">
+      <div class="metric"><div class="metric-label">Score</div><div class="metric-value accent" id="g-score">0</div></div>
+      <div class="metric"><div class="metric-label">Best</div><div class="metric-value warn" id="g-best">—</div></div>
+      <div class="metric"><div class="metric-label">Played</div><div class="metric-value" id="g-played">0</div></div>
+      <div class="metric"><div class="metric-label">Won</div><div class="metric-value" id="g-won">0</div></div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════ RESULT SCREEN ════════════════════════ -->
+  <div id="result-screen" style="display:none">
+    <div class="result-box section" id="result-box">
+      <div class="result-icon" id="result-icon"></div>
+      <div class="result-title" id="result-title"></div>
+      <div class="result-sub" id="result-sub"></div>
+      <div class="result-pts" id="result-pts"></div>
+    </div>
+
+    <div class="grid4 section">
+      <div class="metric"><div class="metric-label">Score</div><div class="metric-value accent" id="r-score">0</div></div>
+      <div class="metric"><div class="metric-label">Best</div><div class="metric-value warn" id="r-best">—</div></div>
+      <div class="metric"><div class="metric-label">Played</div><div class="metric-value" id="r-played">0</div></div>
+      <div class="metric"><div class="metric-label">Win rate</div><div class="metric-value" id="r-wr">—</div></div>
+    </div>
+
+    <div class="grid2 section">
+      <button class="primary-btn" onclick="startGame()">Play again</button>
+      <button class="secondary-btn" onclick="showSetup()">Change difficulty</button>
+    </div>
+
+    <div>
+      <div class="section-label" style="margin-bottom:10px">All rounds</div>
+      <div class="card" id="r-history-list"></div>
+    </div>
+  </div>
+
+</div><!-- /wrapper -->
+
+<script>
+  const DIFF = {
+    easy:   { lo: 1, hi: 50,  att: 10, mult: 1 },
+    medium: { lo: 1, hi: 100, att: 7,  mult: 2 },
+    hard:   { lo: 1, hi: 200, att: 5,  mult: 4 }
+  };
+
+  let state = { score: 0, best: 0, played: 0, won: 0, history: [] };
+  let game  = { diff: 'medium', secret: 0, att: 0, maxAtt: 0, guesses: [], lo: 1, hi: 200 };
+
+  /* ── Difficulty selector ── */
+  function selectDiff(d) {
+    game.diff = d;
+    document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector(`[data-diff="${d}"]`).classList.add('active');
+  }
+
+  /* ── Start a new round ── */
+  function startGame() {
+    const cfg = DIFF[game.diff];
+    game.secret = Math.floor(Math.random() * (cfg.hi - cfg.lo + 1)) + cfg.lo;
+    game.att = 0; game.maxAtt = cfg.att;
+    game.guesses = []; game.lo = cfg.lo; game.hi = cfg.hi;
+
+    show('game-screen');
+    document.getElementById('round-num').textContent  = state.played + 1;
+    document.getElementById('game-sub').textContent   = `${cap(game.diff)} · 1 to ${cfg.hi}`;
+    document.getElementById('range-display').textContent = `${cfg.lo} – ${cfg.hi}`;
+    document.getElementById('range-sub').textContent  = 'Narrow it down';
+    document.getElementById('guess-input').value      = '';
+    document.getElementById('feedback-msg').textContent = '';
+    document.getElementById('thermo-label').textContent = 'Make your first guess…';
+    document.getElementById('thermo-label').style.color = 'var(--color-text-secondary)';
+    document.getElementById('thermo-fill').style.width  = '0%';
+    document.getElementById('thermo-fill').style.background = '#888';
+    document.getElementById('guess-chips').innerHTML  = emptyChips();
+    document.getElementById('guess-btn').disabled     = false;
+    renderHearts(); updateGameStats();
+    document.getElementById('guess-input').focus();
+  }
+
+  /* ── Render hearts ── */
+  function renderHearts() {
+    let h = '';
+    for (let i = 0; i < game.maxAtt; i++)
+      h += `<span class="heart${i < game.att ? ' lost' : ''}">&#9829;</span>`;
+    document.getElementById('hearts-row').innerHTML = h;
+    const rem = game.maxAtt - game.att;
+    document.getElementById('att-count').textContent = `${rem} of ${game.maxAtt} remaining`;
+  }
+
+  /* ── Submit a guess ── */
+  function makeGuess() {
+    const inp = document.getElementById('guess-input');
+    const val = parseInt(inp.value, 10);
+    const cfg = DIFF[game.diff];
+    const msg = document.getElementById('feedback-msg');
+
+    if (isNaN(val) || val < cfg.lo || val > cfg.hi) {
+      msg.textContent = `Enter a number between ${cfg.lo} and ${cfg.hi}`;
+      return;
+    }
+    msg.textContent = '';
+    game.att++; game.guesses.push(val);
+    inp.value = ''; inp.focus();
+
+    updateRange(val);
+    updateThermo(val);
+    renderChips();
+    renderHearts();
+
+    if (val === game.secret) { endGame(true);  return; }
+    if (game.att >= game.maxAtt) { endGame(false); return; }
+    updateGameStats();
+  }
+
+  /* ── Narrow range display ── */
+  function updateRange(guess) {
+    const s = game.secret;
+    if (guess < s) game.lo = Math.max(game.lo, guess + 1);
+    else if (guess > s) game.hi = Math.min(game.hi, guess - 1);
+    document.getElementById('range-display').textContent = `${game.lo} – ${game.hi}`;
+    document.getElementById('range-sub').textContent = `Narrowed to ${game.hi - game.lo + 1} possible values`;
+  }
+
+  /* ── Proximity thermometer ── */
+  function updateThermo(guess) {
+    const s   = game.secret;
+    const cfg = DIFF[game.diff];
+    const span = cfg.hi - cfg.lo;
+    const diff = Math.abs(guess - s);
+    const pct  = Math.max(0, Math.min(100, 100 - Math.round((diff / span) * 100)));
+    const dir  = guess > s ? 'Go lower' : 'Go higher';
+    let label, color;
+
+    if (diff === 0)            { label = 'Exact!';              color = '#639922'; }
+    else if (diff <= span*0.05){ label = `Scorching! ${dir}`;   color = '#D85A30'; }
+    else if (diff <= span*0.15){ label = `Hot! ${dir}`;         color = '#ef9f27'; }
+    else if (diff <= span*0.30){ label = `Warm. ${dir}`;        color = '#BA7517'; }
+    else if (diff <= span*0.50){ label = `Cool. ${dir}`;        color = '#378ADD'; }
+    else                       { label = `Freezing! ${dir}`;    color = '#185FA5'; }
+
+    document.getElementById('thermo-fill').style.width      = pct + '%';
+    document.getElementById('thermo-fill').style.background = color;
+    const lbl = document.getElementById('thermo-label');
+    lbl.textContent  = label;
+    lbl.style.color  = color;
+  }
+
+  /* ── Colored guess chips ── */
+  function renderChips() {
+    const s    = game.secret;
+    const span = DIFF[game.diff].hi - DIFF[game.diff].lo;
+    let html   = '';
+    game.guesses.forEach(g => {
+      const d = Math.abs(g - s);
+      const cls = d === 0 ? 'win' : d <= span*0.1 ? 'hot' : d <= span*0.3 ? 'warm' : 'cold';
+      html += `<span class="chip ${cls}">${g}</span>`;
+    });
+    document.getElementById('guess-chips').innerHTML = html || emptyChips();
+  }
+
+  /* ── End the round ── */
+  function endGame(won) {
+    document.getElementById('guess-btn').disabled = true;
+    const cfg = DIFF[game.diff];
+    let pts = 0;
+    if (won) {
+      pts = Math.max(10, (game.maxAtt - game.att + 1) * 20 * cfg.mult);
+      state.score += pts;
+      state.best   = Math.max(state.best, pts);
+      state.won++;
+    }
+    state.played++;
+    state.history.push({ round: state.played, diff: game.diff, secret: game.secret, att: game.att, won, pts });
+    setTimeout(() => showResult(won, pts), 350);
+  }
+
+  /* ── Quit current round ── */
+  function quitRound() {
+    state.played++;
+    state.history.push({ round: state.played, diff: game.diff, secret: game.secret, att: game.att, won: false, pts: 0 });
+    showResult(false, 0);
+  }
+
+  /* ── Show result screen ── */
+  function showResult(won, pts) {
+    show('result-screen');
+    const box = document.getElementById('result-box');
+    box.className = 'result-box section ' + (won ? 'won' : 'lost');
+    document.getElementById('result-icon').textContent  = won ? '★' : '✗';
+    document.getElementById('result-title').textContent = won ? 'You got it!' : 'Out of attempts';
+    document.getElementById('result-sub').textContent   = won
+      ? `Found ${game.secret} in ${game.att} attempt${game.att !== 1 ? 's' : ''}!`
+      : `The number was ${game.secret}. Better luck next time!`;
+    const ptsEl = document.getElementById('result-pts');
+    ptsEl.textContent  = won ? `+${pts} points` : '';
+    ptsEl.style.color  = won ? 'var(--win-color)' : 'var(--loss-color)';
+    updateResultStats();
+    renderHistory('r-history-list');
+  }
+
+  /* ── Show setup screen ── */
+  function showSetup() {
+    show('setup-screen');
+    updateSetupStats();
+    renderHistory('history-list');
+    document.getElementById('history-section').style.display = state.history.length ? 'block' : 'none';
+  }
+
+  /* ── Screen switcher ── */
+  function show(id) {
+    ['setup-screen', 'game-screen', 'result-screen'].forEach(s => {
+      document.getElementById(s).style.display = s === id ? 'block' : 'none';
+    });
+  }
+
+  /* ── Stat updaters ── */
+  function updateSetupStats() {
+    document.getElementById('stat-score').textContent  = state.score;
+    document.getElementById('top-score').textContent   = state.score;
+    document.getElementById('stat-best').textContent   = state.best || '—';
+    document.getElementById('stat-played').textContent = state.played;
+    document.getElementById('stat-wr').textContent     = state.played ? Math.round(state.won / state.played * 100) + '%' : '—';
+  }
+  function updateGameStats() {
+    document.getElementById('g-score').textContent  = state.score;
+    document.getElementById('g-best').textContent   = state.best || '—';
+    document.getElementById('g-played').textContent = state.played;
+    document.getElementById('g-won').textContent    = state.won;
+  }
+  function updateResultStats() {
+    document.getElementById('r-score').textContent  = state.score;
+    document.getElementById('r-best').textContent   = state.best || '—';
+    document.getElementById('r-played').textContent = state.played;
+    document.getElementById('r-wr').textContent     = state.played ? Math.round(state.won / state.played * 100) + '%' : '—';
+  }
+
+  /* ── Round history table ── */
+  function renderHistory(elId) {
+    const el = document.getElementById(elId);
+    if (!state.history.length) {
+      el.innerHTML = '<p style="font-size:13px;color:var(--color-text-secondary);padding:4px 0">No rounds played yet.</p>';
+      return;
+    }
+    let html = '';
+    [...state.history].reverse().forEach(r => {
+      html += `<div class="round-row">
+        <span style="color:var(--color-text-secondary);min-width:22px">#${r.round}</span>
+        <span style="color:var(--color-text-secondary);font-size:12px;text-transform:capitalize">${r.diff}</span>
+        <span>Secret: <strong>${r.secret}</strong></span>
+        <span style="color:var(--color-text-secondary)">${r.att} try${r.att !== 1 ? 's' : ''}</span>
+        <span class="badge ${r.won ? 'win' : 'loss'}">${r.won ? 'Win' : 'Loss'}</span>
+        <span style="font-weight:500;color:${r.won ? 'var(--win-color)' : 'var(--color-text-secondary)'}">${r.won ? '+' + r.pts : '0'}</span>
+      </div>`;
+    });
+    el.innerHTML = html;
+  }
+
+  /* ── Helpers ── */
+  function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+  function emptyChips() { return '<span style="font-size:13px;color:var(--color-text-secondary)">None yet</span>'; }
+
+  /* ── Enter key support ── */
+  document.getElementById('guess-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !document.getElementById('guess-btn').disabled) makeGuess();
+  });
+</script>
+</body>
+</html>
